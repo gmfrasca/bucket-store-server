@@ -8,10 +8,18 @@ import (
 	"os"
 )
 
+var defaultDataDir = "./data"
+var defaultPort = "8080"
+
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		port = defaultPort
+	}
+
+	dataDir := os.Getenv("DATA_DIR")
+	if dataDir == "" {
+		dataDir = defaultDataDir
 	}
 
 	mux := http.NewServeMux()
