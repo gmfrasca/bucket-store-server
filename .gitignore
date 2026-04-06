@@ -1,0 +1,14 @@
+# Binary
+rhobs-server
+
+# Data directory
+data/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
