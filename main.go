@@ -1,11 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
+
+	"github.com/gfrasca/rhobs-challenge/internal/server"
+	"github.com/gfrasca/rhobs-challenge/internal/store"
 )
 
 var defaultDataDir = "./data"
@@ -22,30 +23,13 @@ func main() {
 		dataDir = defaultDataDir
 	}
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("PUT /objects/{bucket}/{objectID}", handlePut)
-	mux.HandleFunc("GET /objects/{bucket}/{objectID}", handleGet)
-	mux.HandleFunc("DELETE /objects/{bucket}/{objectID}", handleDelete)
+	s, err := store.NewDiskStore(dataDir)
+	if err != nil {
+		log.Fatalf("failed to create disk store: %v", err)
+	}
 
-	addr := fmt.Sprintf(":%s", port)
-	log.Printf("starting server on %s", addr)
-	if err := http.ListenAndServe(addr, mux); err != nil {
+	srv := server.New(s, fmt.Sprintf(":%s", port))
+	if err := srv.Run(); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
-}
-
-func handlePut(w http.ResponseWriter, r *http.Request) {
-	objectID := r.PathValue("objectID")
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"id": objectID})
-}
-
-func handleGet(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "not found", http.StatusNotFound)
-}
-
-func handleDelete(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "not found", http.StatusNotFound)
 }
