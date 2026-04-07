@@ -10,6 +10,8 @@ import (
 	"github.com/gfrasca/bucket-store-server/internal/store"
 )
 
+const maxBodySize = 100 * 1024 * 1024 // 100 MB
+
 func isValidPathSegment(s string) bool {
 	return s != "" && s != ".." && !strings.Contains(s, "/")
 }
@@ -34,6 +36,7 @@ func (s *Server) handlePut(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodySize)
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
 		var maxBytesErr *http.MaxBytesError

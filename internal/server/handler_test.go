@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -124,6 +125,23 @@ func TestPutOverwriteReturnsUpdatedData(t *testing.T) {
 
 	if rec.Body.String() != "v2" {
 		t.Errorf("GET after overwrite = %q, want %q", rec.Body.String(), "v2")
+	}
+}
+
+type zeroReader struct{}
+
+func (zeroReader) Read(p []byte) (int, error) { return len(p), nil }
+
+func TestPutBodyTooLargeReturns413(t *testing.T) {
+	h := newTestServer(t)
+
+	oversized := io.LimitReader(zeroReader{}, 100*1024*1024+1)
+	req := httptest.NewRequest("PUT", "/objects/bucket1/obj1", oversized)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusRequestEntityTooLarge {
+		t.Errorf("PUT oversized status = %d, want %d", rec.Code, http.StatusRequestEntityTooLarge)
 	}
 }
 

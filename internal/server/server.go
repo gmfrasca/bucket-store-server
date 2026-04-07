@@ -38,8 +38,11 @@ func (s *Server) Run() error {
 	defer stop()
 
 	srv := &http.Server{
-		Addr:    s.addr,
-		Handler: s.Handler(),
+		Addr:              s.addr,
+		Handler:           s.Handler(),
+		ReadTimeout:       10 * time.Second,
+		ReadHeaderTimeout: 5 * time.Second,
+		WriteTimeout:      10 * time.Second,
 	}
 
 	go func() {
