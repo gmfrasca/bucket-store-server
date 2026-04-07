@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/gfrasca/rhobs-challenge/internal/server"
-	"github.com/gfrasca/rhobs-challenge/internal/store"
+	"github.com/gfrasca/bucket-store-server/internal/server"
+	"github.com/gfrasca/bucket-store-server/internal/store"
 )
 
 var defaultDataDir = "./data"

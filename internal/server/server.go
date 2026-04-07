@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gfrasca/rhobs-challenge/internal/store"
+	"github.com/gfrasca/bucket-store-server/internal/store"
 )
 
 // Server handles HTTP requests for the object storage API.

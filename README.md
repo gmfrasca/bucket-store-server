@@ -1,61 +1,97 @@
 # Simple Object Storage Service
 
-A lightweight RESTful API service for storing, fetching, and managing objects in buckets stored on disk.
-De-duplicates objects on a per-bucket basis.
+A lightweight RESTful HTTP service for storing, retrieving, and deleting objects organized by buckets. Objects are persisted to disk.
 
-## Installation
-To run and develop the service locally (Golang version):
+## Prerequisites
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/your-username/rhobs-challenge.git
-   cd rhobs-challenge
-   ```
+- Go 1.22+
 
-2. **Install Go (if not installed):**
-   Follow the instructions at https://golang.org/dl/ to install Go.
+## Quick Start
 
-3. **Build the application:**
-   ```bash
-   go build -o rhobs-server .
-   ```
+```bash
+# Build and run
+make run
 
-4. **Run the application:**
-   ```bash
-   ./rhobs-server
-   ```
-   The service will be available at `http://localhost:8000` (or your configured port).
+# Or with custom port and data directory
+PORT=9090 DATA_DIR=/tmp/objstore make run
+```
 
-5. **Running tests:**
-   ```bash
-   go test ./...
-   ```
+The service listens on port `8080` by default.
 
-You may need to adjust filenames or commands if your entry point or dependencies differ.
+## Configuration
 
+| Variable   | Default  | Description                     |
+|------------|----------|---------------------------------|
+| `PORT`     | `8080`   | Port the server listens on      |
+| `DATA_DIR` | `./data` | Directory for object storage    |
 
 ## API Reference
 
-### Object Operations
+### PUT /objects/{bucket}/{objectID}
 
-#### `PUT /objects/{bucket}/{objectID}`
-Store or overwrite an object in `{bucket}` with the given `{key}`.
+Store an object. Overwrites any existing object with the same ID in the bucket.
 
-- **Request Body:** Raw content of the object (binary or text)
-- **Response:** 
-  - `201 Created` if stored successfully
+```bash
+curl -X PUT -d "hello world" http://localhost:8080/objects/mybucket/greeting
+```
 
-#### GET /objects/{bucket}/{key}
-Retrieve the object content from `{bucket}` identified by `{key}`.
+**Response:** `201 Created`
+```json
+{"id": "greeting"}
+```
 
-- **Response:**
-  - `200 OK` with raw object content in response body
-  - `400 Not Found` if the object does not exist
+### GET /objects/{bucket}/{objectID}
 
-#### DELETE /objects/{bucket}/{key}
-Delete the object identified by `{key}` from `{bucket}`
+Retrieve an object.
 
-- **Response:**
-  - `200 OK` if object deleted successfully
-  - `400 Not Found` if the object does not exist
+```bash
+curl http://localhost:8080/objects/mybucket/greeting
+```
 
+**Response (found):** `200 OK` with object data in the body
+
+**Response (not found):** `404 Not Found`
+
+### DELETE /objects/{bucket}/{objectID}
+
+Delete an object.
+
+```bash
+curl -X DELETE http://localhost:8080/objects/mybucket/greeting
+```
+
+**Response (found):** `200 OK`
+
+**Response (not found):** `404 Not Found`
+
+## Development
+
+### Build
+
+```bash
+make build
+```
+
+### Run Tests
+
+```bash
+make test
+```
+
+### Container
+
+```bash
+make image
+podman run -p 8080:8080 bucket-store-server
+```
+
+## AI Usage Disclosure
+
+AI tools (Cursor with Claude) were used during development for:
+
+- **Design discussion**: Evaluating language/framework choices, project structure, and trade-offs before writing code
+- **Scaffolding**: Generating initial project skeleton, boilerplate code, and test structure
+- **Code review**: Identifying dead code, godoc improvements, and status code inconsistencies in the spec
+- **Iterative refinement**: Each layer was reviewed and simplified based on discussion before moving to the next
+
+All AI-generated code was reviewed, tested, and modified by the developer. The iterative approach (stub server → store layer → server layer → packaging) was driven by the developer to maintain understanding and control at each step.

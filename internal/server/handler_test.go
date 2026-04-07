@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gfrasca/rhobs-challenge/internal/server"
-	"github.com/gfrasca/rhobs-challenge/internal/store"
+	"github.com/gfrasca/bucket-store-server/internal/server"
+	"github.com/gfrasca/bucket-store-server/internal/store"
 )
 
 func newTestServer(t *testing.T) http.Handler {

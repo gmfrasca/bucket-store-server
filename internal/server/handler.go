@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/gfrasca/rhobs-challenge/internal/store"
+	"github.com/gfrasca/bucket-store-server/internal/store"
 )
 
 // handlePut stores an object in the given bucket.
