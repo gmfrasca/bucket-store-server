@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 )
 
 // DiskStore implements ObjectStore with on-disk persistence.
 // Objects are stored as files at <dataDir>/<bucket>/<objectID>.
 type DiskStore struct {
+	mu      sync.RWMutex
 	dataDir string
 }
 
@@ -23,6 +25,9 @@ func NewDiskStore(dataDir string) (*DiskStore, error) {
 // Put stores data, creating the bucket directory if it doesn't exist.
 // Overwrites any existing object with the same objectID.
 func (s *DiskStore) Put(bucket, objectID string, data []byte) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	dir := filepath.Join(s.dataDir, bucket)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("creating bucket directory: %w", err)
@@ -37,6 +42,9 @@ func (s *DiskStore) Put(bucket, objectID string, data []byte) error {
 
 // Get returns the object data, or ErrNotFound if it doesn't exist.
 func (s *DiskStore) Get(bucket, objectID string) ([]byte, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	path := filepath.Join(s.dataDir, bucket, objectID)
 	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
@@ -50,6 +58,9 @@ func (s *DiskStore) Get(bucket, objectID string) ([]byte, error) {
 
 // Delete removes the object, or returns ErrNotFound if it doesn't exist.
 func (s *DiskStore) Delete(bucket, objectID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	path := filepath.Join(s.dataDir, bucket, objectID)
 	err := os.Remove(path)
 	if os.IsNotExist(err) {
