@@ -126,3 +126,28 @@ func TestPutOverwriteReturnsUpdatedData(t *testing.T) {
 		t.Errorf("GET after overwrite = %q, want %q", rec.Body.String(), "v2")
 	}
 }
+
+func TestInvalidPathSegmentsRejected(t *testing.T) {
+	h := newTestServer(t)
+
+	tests := []struct {
+		name string
+		path string
+	}{
+		{"slash in bucket", "/objects/bucket%2Fescaped/obj1"},
+		{"dotdot bucket", "/objects/%2e%2e/obj1"},
+		{"dotdot objectID", "/objects/bucket1/%2e%2e"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("PUT", tt.path, strings.NewReader("data"))
+			rec := httptest.NewRecorder()
+			h.ServeHTTP(rec, req)
+
+			if rec.Code != http.StatusBadRequest {
+				t.Errorf("status = %d, want %d", rec.Code, http.StatusBadRequest)
+			}
+		})
+	}
+}

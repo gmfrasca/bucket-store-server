@@ -5,15 +5,34 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gfrasca/bucket-store-server/internal/store"
 )
+
+func isValidPathSegment(s string) bool {
+	return s != "" && s != ".." && !strings.Contains(s, "/")
+}
+
+// validatePathParams checks bucket and objectID for path traversal attempts.
+// Returns false and writes a 400 response if invalid.
+func validatePathParams(w http.ResponseWriter, bucket, objectID string) bool {
+	if !isValidPathSegment(bucket) || !isValidPathSegment(objectID) {
+		http.Error(w, "invalid bucket or object ID", http.StatusBadRequest)
+		return false
+	}
+	return true
+}
 
 // handlePut stores an object in the given bucket.
 func (s *Server) handlePut(w http.ResponseWriter, r *http.Request) {
 	bucket := r.PathValue("bucket")
 	objectID := r.PathValue("objectID")
 	defer r.Body.Close()
+
+	if !validatePathParams(w, bucket, objectID) {
+		return
+	}
 
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -41,6 +60,10 @@ func (s *Server) handleGet(w http.ResponseWriter, r *http.Request) {
 	bucket := r.PathValue("bucket")
 	objectID := r.PathValue("objectID")
 
+	if !validatePathParams(w, bucket, objectID) {
+		return
+	}
+
 	data, err := s.store.Get(bucket, objectID)
 	if errors.Is(err, store.ErrNotFound) {
 		http.Error(w, "object not found", http.StatusNotFound)
@@ -59,6 +82,10 @@ func (s *Server) handleGet(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 	bucket := r.PathValue("bucket")
 	objectID := r.PathValue("objectID")
+
+	if !validatePathParams(w, bucket, objectID) {
+		return
+	}
 
 	err := s.store.Delete(bucket, objectID)
 	if errors.Is(err, store.ErrNotFound) {
