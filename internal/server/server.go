@@ -1,8 +1,12 @@
 package server
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gfrasca/bucket-store-server/internal/store"
 )
@@ -27,8 +31,29 @@ func (s *Server) Handler() http.Handler {
 	return mux
 }
 
-// Run starts the HTTP server. Blocks until the server exits.
+// Run starts the HTTP server and blocks until a SIGINT or SIGTERM is received,
+// then shuts down gracefully allowing in-flight requests to complete.
 func (s *Server) Run() error {
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	srv := &http.Server{
+		Addr:    s.addr,
+		Handler: s.Handler(),
+	}
+
+	go func() {
+		<-ctx.Done()
+		log.Println("Interrupt received. Shutting down...")
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		srv.Shutdown(shutdownCtx)
+	}()
+
 	log.Printf("starting server on %s", s.addr)
-	return http.ListenAndServe(s.addr, s.Handler())
+	err := srv.ListenAndServe()
+	if err == http.ErrServerClosed {
+		return nil
+	}
+	return err
 }
